@@ -242,11 +242,6 @@ export const connector = async () => {
                     },
                     {
                         op: 'replace',
-                        path: '/provisionRequestEnabled',
-                        value: true,
-                    },
-                    {
-                        op: 'replace',
                         path: '/matchAllAccounts',
                         value: false,
                     },
