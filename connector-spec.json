@@ -145,7 +145,7 @@
                                             "parentKey": "requestable",
                                             "parentValue": "true",
                                             "helpKey": "Require approval on request",
-                                            "required": true
+                                            "required": false
                                         },
                                         {
                                             "key": "approverType",
