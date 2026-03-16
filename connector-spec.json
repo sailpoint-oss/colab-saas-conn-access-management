@@ -87,7 +87,7 @@
                                         {
                                             "key": "entitlementExpression",
                                             "label": "Entitlement expression",
-                                            "helpKey": "Velocity expression to filter selected entitlements. Return any non-empty value to include the entitlement, or return empty/null to exclude. Context variables: $entitlement (entire entitlement object), or direct field access (e.g., $name, $value, $attribute). Example: #if($name.contains('Admin'))include#end",
+                                            "helpKey": "Velocity expression to filter selected entitlements. Return any non-empty value to include the entitlement, or return empty/null to exclude. Variables: $entitlement (full object), top-level aliases ($id, $name, $value, $attribute, $description, $privileged, $requestable, $source), and $definitionName (this definition's configuration name). Example: #if($name.contains('Admin'))include#end",
                                             "type": "textarea",
                                             "required": true
                                         }
@@ -171,7 +171,7 @@
                             "copyButton": true,
                             "buttonLabel": "New Access Profile Group Definition",
                             "type": "cardList",
-                            "helpKey": "Define how access profiles and applications are created from entitlements. Each definition: (1) queries entitlements, (2) filters via Velocity expression, (3) groups entitlements into access profiles (1:1 or many:1), (4) creates/updates access profiles, (5) optionally creates applications and assigns access profiles to them. Use velocity expressions with access to $entitlement, $name, $entitlements (array), and custom fields.",
+                            "helpKey": "Define how access profiles and applications are created from entitlements. Each definition: (1) queries entitlements, (2) filters via Velocity expression, (3) groups entitlements into access profiles (1:1 or many:1), (4) creates/updates access profiles, (5) optionally creates applications and assigns access profiles to them. entitlementExpression variables: $entitlement, top-level entitlement aliases ($id, $name, $value, $attribute, ...), and $definitionName. applicationExpression variables: $name (access profile name), $definitionName, plus $entitlement/$entitlements based on grouping mode.",
                             "subMenus": [
                                 {
                                     "label": "Selection configuration",
@@ -181,7 +181,7 @@
                                             "label": "Access Profile Configuration Name",
                                             "type": "text",
                                             "required": true,
-                                            "helpKey": "Descriptive name for this access profile definition. Used for identification and logging only; not visible in ISC UI. The actual access profile names are determined by the entitlementExpression."
+                                            "helpKey": "Descriptive name for this access profile definition. Used for identification and logging only; not visible in ISC UI. The actual access profile names are determined by the entitlementExpression. Available in Velocity as $definitionName."
                                         },
                                         {
                                             "key": "query",
@@ -193,7 +193,7 @@
                                         {
                                             "key": "entitlementExpression",
                                             "label": "Entitlement expression",
-                                            "helpKey": "Velocity expression that determines the access profile name. Return empty to exclude the entitlement. When groupEntitlements=true, entitlements with the same result are grouped into one access profile. When false, each entitlement creates one access profile (1:1). Context: $entitlement object or fields like $name, $value. Example: $attribute",
+                                            "helpKey": "Velocity expression that determines the access profile name. Return empty to exclude the entitlement. When groupEntitlements=true, entitlements with the same result are grouped into one access profile. When false, each entitlement creates one access profile (1:1). Variables: $entitlement (entire object), top-level aliases ($id, $name, $value, $attribute, $description, $privileged, $requestable, $source), and $definitionName. Example: $attribute",
                                             "type": "textarea",
                                             "required": true
                                         }
@@ -280,7 +280,7 @@
                                             "required": true,
                                             "parentKey": "groupAccessProfiles",
                                             "parentValue": "true",
-                                            "helpKey": "Velocity expression to name applications (evaluated per access profile). Context variables: $name (access profile name). If groupEntitlements=false: $entitlement (single entitlement object). If groupEntitlements=true: $entitlements (array of entitlement objects). Example: ${name}_App or $entitlement.source.name"
+                                            "helpKey": "Velocity expression to name applications (evaluated per access profile). Used only when createApplication=true and groupAccessProfiles=true. Variables: $name (access profile name), $definitionName (configuration definition name). If groupEntitlements=false: $entitlement (single entitlement object). If groupEntitlements=true: both $entitlement and $entitlements are arrays of entitlement objects. Example: ${name}_App or ${definitionName}_App"
                                         }
                                     ]
                                 }
@@ -311,7 +311,7 @@
                             "copyButton": true,
                             "buttonLabel": "New Role Group Definition",
                             "type": "cardList",
-                            "helpKey": "Define how roles are created from entitlements. Each definition: (1) queries entitlements, (2) filters via Velocity expression, (3) groups entitlements (all in one role or by expression result), (4) creates/updates roles, (5) optionally sets automatic assignment via membership criteria. Context: $entitlement object or fields.",
+                            "helpKey": "Define how roles are created from entitlements. Each definition: (1) queries entitlements, (2) filters via Velocity expression, (3) groups entitlements (all in one role or by expression result), (4) creates/updates roles, (5) optionally sets automatic assignment via membership criteria. entitlementExpression variables: $entitlement, top-level aliases ($id, $name, $value, $attribute, ...), and $definitionName. assignmentDefinition variables: $name, $definitionName, plus $entitlement or $entitlements depending on grouping mode.",
                             "subMenus": [
                                 {
                                     "label": "Selection configuration",
@@ -333,7 +333,7 @@
                                         {
                                             "key": "entitlementExpression",
                                             "label": "Entitlement expression",
-                                            "helpKey": "Velocity expression for filtering and/or naming roles. Return empty to exclude entitlement. When groupEntitlements=true, the result becomes the role name and entitlements with the same result are grouped together. Context: $entitlement object.",
+                                            "helpKey": "Velocity expression for filtering and/or naming roles. Return empty to exclude entitlement. When groupEntitlements=true, the result becomes the role name and entitlements with the same result are grouped together. Variables: $entitlement (entire object), top-level aliases ($id, $name, $value, $attribute, $description, $privileged, $requestable, $source), and $definitionName.",
                                             "type": "textarea",
                                             "required": true
                                         }
@@ -415,7 +415,7 @@
                                             "required": true,
                                             "parentKey": "automaticAssignment",
                                             "parentValue": "true",
-                                            "helpKey": "Membership criteria for automatic role assignment using Velocity template syntax. Can reference identity attributes and use logical operators. See https://github.com/yannick-beot-sp/vscode-sailpoint-identitynow?tab=readme-ov-file#roles for detailed format and examples. Context variables: $name (role name). Use $entitlement if not grouping or $entitlements if grouping."
+                                            "helpKey": "Membership criteria for automatic role assignment using Velocity template syntax. Can reference identity attributes and use logical operators. See https://github.com/yannick-beot-sp/vscode-sailpoint-identitynow?tab=readme-ov-file#roles for detailed format and examples. Variables: $name (role name), $definitionName (configuration definition name). If groupEntitlements=false: $entitlement (single entitlement object). If groupEntitlements=true: $entitlements (array of entitlement objects)."
                                         }
                                     ]
                                 }

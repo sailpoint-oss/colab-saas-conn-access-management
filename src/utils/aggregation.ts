@@ -52,11 +52,18 @@ export function buildEntitlementPatch(
     entitlements: { id?: string | null }[],
     options?: EntitlementPatchOptions
 ): JsonPatchOperationV2025[] {
-    const patch: JsonPatchOperationV2025[] = [{
-        op: 'replace',
-        path: '/entitlements',
-        value: entitlements as JsonPatchOperationV2025['value'],
-    }]
+    const patch: JsonPatchOperationV2025[] = [
+        {
+            op: 'replace',
+            path: '/entitlements',
+            value: entitlements as JsonPatchOperationV2025['value'],
+        },
+        {
+            op: 'replace',
+            path: '/enabled',
+            value: true as JsonPatchOperationV2025['value'],
+        },
+    ]
     
     if (options?.requestable) {
         patch.push({ op: 'replace', path: '/requestable', value: true as JsonPatchOperationV2025['value'] })
@@ -83,13 +90,20 @@ export interface ChangeDetectionResult {
     requestableChanged: boolean
     accessRequestConfigChanged: boolean
     membershipChanged?: boolean
+    enabledChanged?: boolean
 }
 
 /**
  * Compares desired vs existing values to detect if an update is needed.
  */
 export function detectRequestableAndConfigChanges(
-    existing: { entitlements?: { id?: string | null }[] | null; requestable?: boolean; accessRequestConfig?: unknown; membership?: unknown },
+    existing: {
+        entitlements?: { id?: string | null }[] | null
+        requestable?: boolean
+        accessRequestConfig?: unknown
+        membership?: unknown
+        enabled?: boolean
+    },
     entitlements: { id?: string | null }[],
     requestable?: boolean,
     accessRequestConfig?: unknown,
@@ -105,6 +119,7 @@ export function detectRequestableAndConfigChanges(
             membership !== undefined
                 ? !areJsonEqual(existing.membership, membership)
                 : false,
+        enabledChanged: existing.enabled !== true,
     }
 }
 
@@ -112,9 +127,15 @@ export function detectRequestableAndConfigChanges(
  * Returns true if no meaningful changes were detected (skip update).
  */
 export function shouldSkipUpdate(result: ChangeDetectionResult, includeMembership = false): boolean {
-    const { entitlementsChanged, requestableChanged, accessRequestConfigChanged, membershipChanged } = result
+    const {
+        entitlementsChanged,
+        requestableChanged,
+        accessRequestConfigChanged,
+        membershipChanged,
+        enabledChanged,
+    } = result
     
-    if (entitlementsChanged || requestableChanged || accessRequestConfigChanged) {
+    if (entitlementsChanged || requestableChanged || accessRequestConfigChanged || enabledChanged) {
         return false
     }
     

@@ -16,3 +16,21 @@ export function evaluateVelocityExpression(
     const velocity = new velocityjs.Compile(velocityTemplate)
     return velocity.render(context)
 }
+
+/**
+ * Builds entitlement template context with both nested and top-level access.
+ *
+ * This keeps expressions backward-compatible:
+ * - Preferred: $entitlement.name
+ * - Supported alias: $name
+ */
+export function buildEntitlementVelocityContext<T extends object>(
+    entitlement: T,
+    additionalContext: Record<string, unknown> = {}
+): Record<string, unknown> {
+    return {
+        entitlement,
+        ...(entitlement as Record<string, unknown>),
+        ...additionalContext,
+    }
+}

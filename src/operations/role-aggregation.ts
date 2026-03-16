@@ -4,6 +4,7 @@ import { ISCClient, LightweightRole } from '../isc-client'
 import { Config } from '../model/config'
 import { RoleProperties } from '../model/propertyDefinitions'
 import {
+    buildEntitlementVelocityContext,
     buildApprovalSchemesConfig,
     buildEntitlementPatch,
     detectRequestableAndConfigChanges,
@@ -65,7 +66,9 @@ export async function aggregateRoles(config: Config, isc: ISCClient): Promise<vo
         // Evaluate entitlementExpression; group by role name (definition name or expression result)
         entitlements: for (const entitlement of entitlements) {
             logger.debug(`Processing entitlement: ${entitlement.name} (${entitlement.id})`)
-            const context = { entitlement } as Record<string, unknown>
+            const context = buildEntitlementVelocityContext(entitlement, {
+                definitionName: definition.name,
+            })
             let roleName = definition.name
             const name = evaluateVelocityExpression(definition.entitlementExpression, context)
             // Skip if expression evaluated to empty
@@ -114,7 +117,10 @@ export async function aggregateRoles(config: Config, isc: ISCClient): Promise<vo
 
             // Evaluate membership assignment definition
             if (definition.assignmentDefinition) {
-                const assignmentContext: Record<string, unknown> = { name: groupName }
+                const assignmentContext: Record<string, unknown> = {
+                    name: groupName,
+                    definitionName: definition.name,
+                }
                 
                 if (definition.groupEntitlements) {
                     // Multiple entitlements grouped: provide all as 'entitlements'

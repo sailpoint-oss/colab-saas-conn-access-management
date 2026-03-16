@@ -53,6 +53,7 @@ export interface LightweightAccessProfile {
     entitlements?: Array<{ id?: string | null }> | null
     requestable?: boolean
     accessRequestConfig?: unknown
+    enabled?: boolean
     app?: {
         id?: string
         name?: string
@@ -67,6 +68,7 @@ export interface LightweightRole {
     requestable?: boolean
     accessRequestConfig?: unknown
     membership?: unknown
+    enabled?: boolean
 }
 
 export class ISCClient {
@@ -418,11 +420,14 @@ export class ISCClient {
                         entitlements: ap.entitlements,
                         requestable: ap.requestable,
                         accessRequestConfig: ap.accessRequestConfig,
-                        app: ap.app ? {
-                            id: ap.app.id,
-                            name: ap.app.name,
-                            accountSource: ap.app.accountSource,
-                        } : undefined,
+                        enabled: ap.enabled,
+                        app: ap.app
+                            ? {
+                                  id: ap.app.id,
+                                  name: ap.app.name,
+                                  accountSource: ap.app.accountSource,
+                              }
+                            : undefined,
                     })
                 }
             }
@@ -463,6 +468,7 @@ export class ISCClient {
                         requestable: role.requestable,
                         accessRequestConfig: role.accessRequestConfig,
                         membership: role.membership,
+                        enabled: role.enabled,
                     })
                 }
             }
@@ -493,11 +499,14 @@ export class ISCClient {
                     entitlements: accessProfile.entitlements,
                     requestable: accessProfile.requestable,
                     accessRequestConfig: accessProfile.accessRequestConfig,
-                    app: accessProfile.app ? {
-                        id: accessProfile.app.id,
-                        name: accessProfile.app.name,
-                        accountSource: accessProfile.app.accountSource,
-                    } : undefined,
+                    enabled: accessProfile.enabled,
+                    app: accessProfile.app
+                        ? {
+                              id: accessProfile.app.id,
+                              name: accessProfile.app.name,
+                              accountSource: accessProfile.app.accountSource,
+                          }
+                        : undefined,
                 })
             }
         }
@@ -529,6 +538,7 @@ export class ISCClient {
                     requestable: role.requestable,
                     accessRequestConfig: role.accessRequestConfig,
                     membership: role.membership,
+                    enabled: role.enabled,
                 })
             }
         }

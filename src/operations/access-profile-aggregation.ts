@@ -8,6 +8,7 @@ import {
 import { ISCClient } from '../isc-client'
 import { AccessProfileDefinition, Config } from '../model/config'
 import {
+    buildEntitlementVelocityContext,
     buildApprovalSchemesConfig,
     buildEntitlementPatch,
     detectRequestableAndConfigChanges,
@@ -335,7 +336,9 @@ async function deleteAccessProfilesAndApps(
     // Group entitlements to determine expected access profile names
     const entitlementGroups = new Map<string, EntitlementV2025[]>()
     for (const entitlement of entitlements) {
-        const context = { entitlement }
+        const context = buildEntitlementVelocityContext(entitlement, {
+            definitionName: definition.name,
+        })
         const apName = evaluateVelocityExpression(definition.entitlementExpression, context)
 
         if (!apName || apName === definition.entitlementExpression) {
@@ -363,7 +366,10 @@ async function deleteAccessProfilesAndApps(
                     logger.error(`Definition ${definition.name}: groupAccessProfiles is true but applicationExpression not defined`)
                     continue
                 }
-                const appContext: Record<string, unknown> = { name: apName }
+                const appContext: Record<string, unknown> = {
+                    name: apName,
+                    definitionName: definition.name,
+                }
                 appContext.entitlement = definition.groupEntitlements ? ents : ents[0]
                 if (definition.groupEntitlements) {
                     appContext.entitlements = ents
@@ -516,7 +522,9 @@ async function buildAccessProfilesFromEntitlements(
             continue
         }
 
-        const context = { entitlement }
+        const context = buildEntitlementVelocityContext(entitlement, {
+            definitionName: definition.name,
+        })
         const apName = evaluateVelocityExpression(definition.entitlementExpression, context)
 
         if (!apName || apName === definition.entitlementExpression) {
@@ -585,7 +593,10 @@ function groupAccessProfilesIntoApplications(
                 continue
             }
 
-            const appContext: Record<string, unknown> = { name: ap.name }
+            const appContext: Record<string, unknown> = {
+                name: ap.name,
+                definitionName: definition.name,
+            }
             appContext.entitlement = definition.groupEntitlements ? ap.entitlements : ap.entitlements[0]
             if (definition.groupEntitlements) {
                 appContext.entitlements = ap.entitlements

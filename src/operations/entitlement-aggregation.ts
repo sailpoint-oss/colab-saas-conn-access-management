@@ -3,6 +3,7 @@ import { EntitlementV2025, JsonPatchOperationV2025 } from 'sailpoint-api-client'
 import { ISCClient } from '../isc-client'
 import { Config } from '../model/config'
 import {
+    buildEntitlementVelocityContext,
     buildEntitlementRequestConfig,
     evaluateVelocityExpression,
     runWithConcurrency,
@@ -54,7 +55,9 @@ export async function aggregateEntitlements(config: Config, isc: ISCClient): Pro
         // Filter: keep only entitlements where entitlementExpression evaluates to non-empty
         const selected: EntitlementV2025[] = []
         for (const entitlement of entitlements) {
-            const context = { entitlement } as Record<string, unknown>
+            const context = buildEntitlementVelocityContext(entitlement, {
+                definitionName: definition.name,
+            })
             const name = evaluateVelocityExpression(definition.entitlementExpression, context)
             if (!name) {
                 logger.info(

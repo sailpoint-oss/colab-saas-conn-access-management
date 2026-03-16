@@ -114,11 +114,13 @@ Each entitlement definition allows you to bulk-update entitlement properties:
 #### Selection Configuration
 
 -   **Definition Name**: Descriptive name for identification and logging
--   **Entitlement Query**: ISC V3 search filter (e.g., `source.name:"Active Directory" AND name:*Admin*`)
+-   **Entitlement Query**: List Entitlements API `filters` query (SCIM-like syntax, e.g., `source.name eq "Active Directory" and name sw "Admin"`)
 -   **Entitlement Expression**: Velocity expression to filter selected entitlements
     -   Return any non-empty value to include the entitlement
     -   Return empty/null to exclude
-    -   Context: `$entitlement` (entire object) or direct field access (`$name`, `$value`, etc.)
+    -   Context: `$entitlement` (entire object)
+    -   Top-level aliases are also available for compatibility (e.g., `$name`, `$value`, `$attribute`)
+    -   `$definitionName` is available and equals this definition's configuration name
     -   Example: `#if($name.contains('Admin'))include#end`
 
 #### Update Configuration
@@ -137,12 +139,14 @@ Each access profile definition creates or manages access profiles from entitleme
 #### Selection Configuration
 
 -   **Access Profile Configuration Name**: Descriptive name for this definition
--   **Entitlement Query**: ISC V3 search filter (e.g., `source.name:"Workday" AND attribute:Department`)
+-   **Entitlement Query**: List Entitlements API `filters` query (SCIM-like syntax, e.g., `source.name eq "Workday" and attribute eq "Department"`)
 -   **Entitlement Expression**: Velocity expression that determines access profile names
     -   Return empty to exclude entitlement
     -   When `groupEntitlements=true`: entitlements with the same result are grouped into one access profile
     -   When `groupEntitlements=false`: each entitlement creates one access profile (1:1 mapping)
-    -   Context: `$entitlement` object or fields like `$name`, `$value`, `$attribute`
+    -   Context: `$entitlement` (entire object)
+    -   Top-level aliases are also available for compatibility (e.g., `$name`, `$value`, `$attribute`)
+    -   `$definitionName` is available and equals this definition's configuration name
     -   Example: `$attribute` or `${source.name}_${attribute}`
 
 #### Access Profile Configuration
@@ -159,9 +163,11 @@ Each access profile definition creates or manages access profiles from entitleme
     -   Enabled: Access profiles distributed across multiple applications based on expression
     -   Disabled: All access profiles go into one application (named after definition)
 -   **Application name expression**: Velocity expression to name applications
+    -   Evaluated only when `createApplication=true` and `groupAccessProfiles=true`
     -   Context: `$name` (access profile name)
+    -   `$definitionName` is available and equals this definition's configuration name
     -   If `groupEntitlements=false`: `$entitlement` (single entitlement object)
-    -   If `groupEntitlements=true`: `$entitlements` (array of entitlement objects)
+    -   If `groupEntitlements=true`: `$entitlement` and `$entitlements` (both are arrays of entitlement objects)
     -   Example: `${name}_App` or `$entitlement.source.name`
 
 ### Role Definitions
@@ -171,11 +177,13 @@ Each role definition creates or manages roles from entitlements:
 #### Selection Configuration
 
 -   **Role Group Name**: Name for this definition (also the actual role name when `groupEntitlements=false`)
--   **Entitlement Query**: ISC V3 search filter (e.g., `source.name:"SAP" AND privileged:true`)
+-   **Entitlement Query**: List Entitlements API `filters` query (SCIM-like syntax, e.g., `source.name eq "SAP" and privileged eq true`)
 -   **Entitlement Expression**: Velocity expression for filtering and naming
     -   Return empty to exclude entitlement
     -   When `groupEntitlements=true`: result becomes role name, entitlements with same result are grouped
-    -   Context: `$entitlement` object or fields like `$name`, `$value`, `$attribute`
+    -   Context: `$entitlement` (entire object)
+    -   Top-level aliases are also available for compatibility (e.g., `$name`, `$value`, `$attribute`)
+    -   `$definitionName` is available and equals this definition's configuration name
     -   Example: `$attribute` or `${source.name}_${attribute}`
 
 #### Role Configuration
@@ -191,7 +199,7 @@ Each role definition creates or manages roles from entitlements:
 -   **Assignment Definition**: Membership criteria using Velocity template syntax
     -   Can reference identity attributes and use logical operators
     -   See [this guide](https://github.com/yannick-beot-sp/vscode-sailpoint-identitynow?tab=readme-ov-file#roles) for format details
-    -   Variables from entitlement context are available
+    -   Variables: `$name` (role name), `$definitionName` (definition configuration name), plus `$entitlement` (single entitlement) when `groupEntitlements=false`, or `$entitlements` (array) when `groupEntitlements=true`
 
 ## Development
 
@@ -242,7 +250,7 @@ npm run pack-zip
 
 ### Entitlement Management
 
--   Query-based entitlement selection using ISC V3 search API
+-   Query-based entitlement selection using List Entitlements API (`/v2025/entitlements`) filters
 -   Velocity expression filtering for fine-grained control
 -   Bulk update of requestable and privileged flags (50 entitlements per API call)
 -   Per-entitlement approval workflow configuration
@@ -292,32 +300,34 @@ npm run pack-zip
 
 Velocity expressions are used throughout the connector for filtering and naming. The available context variables depend on the operation:
 
-### Common Variables
+### `entitlementExpression` (Entitlements, Access Profiles, Roles)
 
--   `$entitlement` - The full entitlement object from the API
--   Direct field access - Any entitlement field can be accessed directly:
-    -   `$id` - Entitlement ID
-    -   `$name` - Entitlement name
-    -   `$value` - Entitlement value
-    -   `$attribute` - Entitlement attribute
-    -   `$description` - Entitlement description
-    -   `$privileged` - Whether the entitlement is privileged
-    -   `$requestable` - Whether the entitlement is requestable
-    -   `$source` - Source object (with fields like `$source.name`, `$source.id`)
+Available variables:
 
-### Access Profile Expressions
+-   `$entitlement` - full entitlement object (preferred form)
+-   Top-level entitlement aliases (for compatibility): `$id`, `$name`, `$value`, `$attribute`, `$description`, `$privileged`, `$requestable`, `$source`
+-   `$definitionName` - configuration definition name (`name` field in connector config)
+-   Nested fields are available via object access (for example: `$entitlement.source.name`, `$source.name`)
 
-Additional context for `applicationExpression`:
+### `applicationExpression` (Access Profiles)
 
--   `$name` - The access profile name
--   `$entitlement` - Single entitlement object (when `groupEntitlements=false`)
--   `$entitlements` - Array of entitlement objects (when `groupEntitlements=true`)
+Evaluated only when `createApplication=true` and `groupAccessProfiles=true`.
 
-### Role Assignment Expressions
+Available variables:
 
-Additional context for `assignmentDefinition`:
+-   `$name` - access profile name (this is the value produced by `entitlementExpression`, not the configuration definition name)
+-   `$definitionName` - configuration definition name (`name` field in connector config)
+-   If `groupEntitlements=false`: `$entitlement` (single entitlement object)
+-   If `groupEntitlements=true`: `$entitlement` and `$entitlements` (both are arrays of entitlement objects)
 
--   All entitlement fields are available as variables
+### `assignmentDefinition` (Roles)
+
+Available variables:
+
+-   `$name` - role name
+-   `$definitionName` - configuration definition name (`name` field in connector config)
+-   If `groupEntitlements=false`: `$entitlement` (single entitlement object)
+-   If `groupEntitlements=true`: `$entitlements` (array of entitlement objects)
 -   Identity attributes can be referenced (see [membership criteria guide](https://github.com/yannick-beot-sp/vscode-sailpoint-identitynow?tab=readme-ov-file#roles))
 
 ### Expression Examples
@@ -344,6 +354,12 @@ ${source.name}_${attribute}
 
 ```velocity
 ${name}_Application
+```
+
+**Create application name from configuration group name:**
+
+```velocity
+${definitionName}_Application
 ```
 
 **Filter privileged entitlements only:**
@@ -529,7 +545,7 @@ The connector includes debug logging that can be enabled in the source configura
 **Issue**: Entitlements not being updated
 
 -   Check the `entitlementExpression` - it might be filtering out entitlements
--   Verify the query syntax matches ISC V3 search API format
+-   Verify the query syntax matches List Entitlements API `filters` format
 -   Check debug logs for expression evaluation results
 
 **Issue**: Access profiles/roles not created

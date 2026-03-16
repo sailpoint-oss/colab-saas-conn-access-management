@@ -1,6 +1,6 @@
 import { EntitlementRefV2025, EntitlementV2025 } from 'sailpoint-api-client'
 import { stringToMembership } from './membership-parser'
-import { evaluateVelocityExpression } from './velocity'
+import { buildEntitlementVelocityContext, evaluateVelocityExpression } from './velocity'
 
 export const entitlementToRef = (entitlement: EntitlementV2025): EntitlementRefV2025 => ({
     id: entitlement.id!,
@@ -19,6 +19,7 @@ export const areStringArraysEqual = (a?: string[], b?: string[]): boolean => {
 export { areEntitlementRefsEqual, areJsonEqual } from './comparison'
 export { stringToMembership }
 export { evaluateVelocityExpression } from './velocity'
+export { buildEntitlementVelocityContext } from './velocity'
 export {
     pushToGroupMap,
     buildApprovalSchemesConfig,
